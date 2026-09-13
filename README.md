@@ -1,4 +1,4 @@
-# EXP 1(E) CLOUD-BASED DEVICE CONTROL USING MQTT AND WI-FI COMMUNICATION
+# EXP 8 : CLOUD-BASED DEVICE CONTROL USING MQTT AND WI-FI COMMUNICATION
 
 ## Aim
 
@@ -20,9 +20,8 @@ To control an electrical device remotely through a cloud platform using MQTT com
 
 # Circuit Diagram
 
----
-To upload
----
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/707cbbff-a867-45bf-92d3-786a3244d2ab" />
+
 
 # Procedure
 
@@ -91,12 +90,124 @@ To upload
 7. Record the commands and corresponding device states.
 
 # Program
+```
+#include <WiFiS3.h>
 
+char ssid[] = "Magesh";      // Replace with your WiFi name
+char pass[] = "8825657396";  // Replace with your WiFi password
 
+WiFiServer server(80);
 
-> **Note:** The above program is written for an **ESP32** using the `WiFi.h` library. Replace the Wi-Fi credentials, MQTT broker address, and MQTT topic with the values used in the laboratory setup.
+const int ledPin = 13;
+
+bool blinkMode = false;
+unsigned long previousMillis = 0;
+const long interval = 500;  // Blink every 500 ms
+bool ledState = LOW;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+
+  Serial.print("Connecting to WiFi");
+
+  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+    Serial.print(".");
+    delay(3000);
+  }
+
+  Serial.println("\nConnected!");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  server.begin();
+}
+
+void loop() {
+
+  // Blink LED if blink mode is enabled
+  if (blinkMode) {
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      ledState = !ledState;
+      digitalWrite(ledPin, ledState);
+    }
+  }
+
+  WiFiClient client = server.available();
+
+  if (client) {
+
+    String request = client.readStringUntil('\r');
+    client.flush();
+
+    if (request.indexOf("/ON") != -1) {
+      blinkMode = false;
+      digitalWrite(ledPin, HIGH);
+    }
+
+    if (request.indexOf("/OFF") != -1) {
+      blinkMode = false;
+      digitalWrite(ledPin, LOW);
+    }
+
+    if (request.indexOf("/BLINK") != -1) {
+      blinkMode = true;
+    }
+
+    if (request.indexOf("/STOP") != -1) {
+      blinkMode = false;
+      digitalWrite(ledPin, LOW);
+    }
+
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: text/html");
+    client.println();
+
+    client.println("<!DOCTYPE html>");
+    client.println("<html>");
+    client.println("<head>");
+
+    client.println("<meta name='viewport' content='width=device-width, initial-scale=1'>");
+
+    client.println("<style>");
+    client.println("body{font-family:Arial;text-align:center;background:#f2f2f2;}");
+    client.println("h1{color:#333;}");
+    client.println("button{width:200px;height:60px;font-size:22px;border:none;border-radius:12px;margin:10px;color:white;cursor:pointer;}");
+    client.println(".on{background:green;}");
+    client.println(".off{background:red;}");
+    client.println(".blink{background:blue;}");
+    client.println(".stop{background:black;}");
+    client.println("</style>");
+
+    client.println("</head>");
+    client.println("<body>");
+
+    client.println("<h1>Arduino UNO R4 WiFi</h1>");
+    client.println("<h2>LED Control</h2>");
+
+    client.println("<a href='/ON'><button class='on'>LED ON</button></a><br>");
+    client.println("<a href='/OFF'><button class='off'>LED OFF</button></a><br>");
+    client.println("<a href='/BLINK'><button class='blink'>BLINK</button></a><br>");
+    client.println("<a href='/STOP'><button class='stop'>STOP BLINK</button></a>");
+
+    client.println("</body>");
+    client.println("</html>");
+
+    delay(1);
+    client.stop();
+  }
+}
+```
+
 
 # Observation
+
+<img width="899" height="1599" alt="image" src="https://github.com/user-attachments/assets/1ddbb283-024a-477f-9714-c798b34072e9" />
 
 
 # Result
